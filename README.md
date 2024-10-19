@@ -18,3 +18,10 @@ pmagent "Fix the code from playground folder" playground
 ```
 ### Put API KEY ON ENV: OPENAI_API_KEY
 
+
+#### Examples
+```
+pmagent "Create a webpage for a clothing store, put some random cloth images from online free images for products and add an add-to-cart button, i have create folder web-page" web-page
+
+pmagent "write a data analyis code on anaylis.ipynb file to do data analyiss on data from data-analysis folder" data-analysis
+```
