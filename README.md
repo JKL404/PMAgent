@@ -16,16 +16,16 @@ pmagent "Fix the code from playground folder" playground
 # pmagent <UserPrompt> <directorytoexecute>
 
 ```
-### Put API KEY ON ENV: OPENAI_API_KEY
+#### Put API KEY ON ENV: OPENAI_API_KEY
 
 
-#### Examples
+## Examples
 
-Syntax
+### Syntax
 ```
 pmagent <UserPrompt> <directorytoexecute>
 ```
-Use Case:
+### Use Case:
 ```
 pmagent "Create a webpage for a clothing store, put some random cloth images from online free images for products and add an add-to-cart button, i have create folder web-page" web-page
 
