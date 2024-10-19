@@ -20,6 +20,12 @@ pmagent "Fix the code from playground folder" playground
 
 
 #### Examples
+
+Syntax
+```
+pmagent <UserPrompt> <directorytoexecute>
+```
+Use Case:
 ```
 pmagent "Create a webpage for a clothing store, put some random cloth images from online free images for products and add an add-to-cart button, i have create folder web-page" web-page
 
