@@ -21,13 +21,40 @@ pmagent "Fix the code from playground folder" playground
 
 ## Examples
 
-### Syntax
-```
+### Bash Terminal Syntax
+```bash
 pmagent <UserPrompt> <directorytoexecute>
 ```
 ### Use Case:
-```
+```bash
 pmagent "Create a webpage for a clothing store, put some random cloth images from online free images for products and add an add-to-cart button, i have create folder web-page" web-page
 
 pmagent "write a data analyis code on anaylis.ipynb file to do data analyiss on data from data-analysis folder" data-analysis
+```
+
+
+### Python Syntax:
+```python
+
+# another_script.py
+import os
+from pm_agent import LLMInteractionManager
+
+# Make sure the environment variable is set for the API key
+os.environ["OPENAI_API_KEY"] = "your_openai_api_key_here"
+
+def main():
+    # Create an instance of the LLMInteractionManager
+    llm_interaction_manager = LLMInteractionManager(api_key=os.getenv("OPENAI_API_KEY"))
+
+    # Define the message and path you want to use
+    user_message = "Fix the code from playground/ folder and rewrite the code in an advanced professional way on the same file"
+    path = "playground"
+
+    # Call the interact_with_llm function
+    llm_interaction_manager.interact_with_llm(user_message, path=path)
+
+if __name__ == "__main__":
+    main()
+
 ```
