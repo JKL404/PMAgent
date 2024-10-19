@@ -38,7 +38,7 @@ pmagent "write a data analyis code on anaylis.ipynb file to do data analyiss on 
 
 # another_script.py
 import os
-from pm_agent import LLMInteractionManager
+from pmagent import LLMInteractionManager
 
 # Make sure the environment variable is set for the API key
 os.environ["OPENAI_API_KEY"] = "your_openai_api_key_here"
