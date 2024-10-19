@@ -9,6 +9,8 @@ To install PMAgent:
 ```bash
 pip install PMAgent
 
+export OPENAI_API_KEY="sk-"
+
 pmagent "Fix the code from playground folder" playground
 
 ```
