@@ -13,5 +13,8 @@ export OPENAI_API_KEY="sk-"
 
 pmagent "Fix the code from playground folder" playground
 
+# pmagent <UserPrompt> <directorytoexecute>
+
 ```
 ### Put API KEY ON ENV: OPENAI_API_KEY
+
