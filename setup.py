@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='PMAgent',
-    version='0.2.3',
+    version='0.2.6',
     author='Laxman Khatri',
     author_email='khatrilaxman1997@gmail.com',
     description='A PMAgent is an Expert Technical Professional with comprehensive knowledge across multiple domains including Full Stack Development, Data Science, Data Analysis, DevOps, and Machine Learning.',
