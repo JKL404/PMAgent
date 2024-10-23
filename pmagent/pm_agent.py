@@ -44,7 +44,12 @@ MAX_TOKENS = os.getenv("MAX_TOKENS")
 
 
 class CodeRefactorManager:
-    def __init__(self, open_ai_key, grop_api_key, config:dict = {}):
+    def __init__(
+        self, open_ai_key,
+        grop_api_key,
+        config:dict = {},
+        llm_type: str = None
+    ):
         self.logger = logger
         self.config = config
         # Dictionary to map language to file extension and interpreter
@@ -59,32 +64,50 @@ class CodeRefactorManager:
                     'interpreter': 'bash'
                 }
             }
-        self.client, self.default_model = self._create_client_and_model(open_ai_key, grop_api_key)
+        self.client, self.default_model = self._create_client_and_model(
+            open_ai_key,
+            grop_api_key,
+            llm_type
+        )
 
-    def _create_client_and_model(self, open_ai_key: Optional[str], grop_api_key: Optional[str]) -> Tuple:
+    def _create_client_and_model(self, open_ai_key: Optional[str], grop_api_key: Optional[str], llm_type: Optional[str] = None) -> Tuple:
         """
-        Creates and returns the appropriate client and default model based on the provided API keys.
+        Creates and returns the appropriate client and default model based on the provided API keys or LLM type.
 
         Args:
             open_ai_key (Optional[str]): API key for OpenAI.
             grop_api_key (Optional[str]): API key for Groq.
+            llm_type (Optional[str]): LLM to choose, if specified.
 
         Returns:
             Tuple: A tuple containing the client instance and the default model string.
 
         Raises:
-            ValueError: If neither API key is provided.
+            ValueError: If neither API key nor valid LLM type is provided.
         """
-        options: Dict[str, Tuple] = {
+        # Define LLM options and check if the corresponding keys are available
+        llm_options = {
             'openai': (OpenAI(api_key=open_ai_key), OPENAI_DEFAULT_CONFIG['model']) if open_ai_key else (None, None),
             'groq': (Groq(api_key=grop_api_key), GROQ_DEFAULT_CONFIG['model']) if grop_api_key else (None, None)
         }
 
-        for key in ['openai', 'groq']:
-            client, model = options[key]
+        # If llm_type is provided, return the corresponding client and model
+        if llm_type and llm_type in llm_options:
+            client, model = llm_options[llm_type]
+            if client:
+                self.logger.info(f"** LLM Type ** : {llm_type.upper()}")
+                return client, model
+            else:
+                raise ValueError(f"API key not provided for the specified LLM type: {llm_type}")
+
+        # Fallback to checking available keys if llm_type is not provided
+        for key, (client, model) in llm_options.items():
             if client:
                 self.logger.info(f"** LLM Type ** : {key.upper()}")
                 return client, model
+
+        # Raise error if no valid client can be created
+        raise ValueError("No valid LLM client could be created. Please provide a valid API key.")
 
     def handle_pip_install(self, code_content):
         """Handle pip install commands separately before main code execution"""
@@ -391,14 +414,15 @@ class FileManager:
 
 
 class LLMInteractionManager:
-    def __init__(self, openai_api_key=None, groq_api_key=None, config: dict = {}):
+    def __init__(self, openai_api_key=None, groq_api_key=None, config: dict = {}, llm_type=None):
         self.logger = logger
         self.code_refactor_manager = CodeRefactorManager(
             open_ai_key=OPENAI_API_KEY or openai_api_key,
             grop_api_key=GROQ_API_KEY or groq_api_key,
             config=self.prepare_config(
                 config=config,
-            )
+            ),
+            llm_type=llm_type,
         )
         self.file_manager = FileManager()
 
