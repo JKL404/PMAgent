@@ -12,28 +12,27 @@ def setup_argument_parser():
     """Setup and return the argument parser with all necessary arguments."""
     parser = argparse.ArgumentParser(
         description="A PMAgent is an Expert Technical Professional with comprehensive knowledge across "
-                   "multiple domains including Full Stack Development, Data Science, Data Analysis, "
-                   "DevOps, and Machine Learning."
+                    "multiple domains including Full Stack Development, Data Science, Data Analysis, "
+                    "DevOps, and Machine Learning."
     )
     
     # Mandatory message argument - can be provided either positionally or with --message/-m
     message_group = parser.add_mutually_exclusive_group(required=True)
-    message_group.add_argument('message', type=str, nargs='?',
-                             help="The message describing what needs to be done.")
-    message_group.add_argument('--message', '-m', type=str,
-                             help="The message describing what needs to be done.")
+    message_group.add_argument('message', type=str, nargs='?', 
+                               help="The message describing what needs to be done.")
+    message_group.add_argument('--message', '-m', type=str, 
+                               help="The message describing what needs to be done.")
     
     # Optional path argument - can be provided either positionally or with --path/-p
-    parser.add_argument('--path', '-p', type=str,
-                       default="",
-                       help="The path to the file or folder to modify.")
+    parser.add_argument('path', type=str, nargs='?', default="", 
+                        help="The path to the file or folder to modify.")
+    parser.add_argument('--path', '-p', type=str, 
+                        help="The path to the file or folder to modify.")
     
     # Add LLM type selection argument - default will be determined based on available API keys
-    parser.add_argument('--llm-type', '-l', type=str,
-                       choices=['openai', 'groq'],
-                       default="",
-                       help="Choose the LLM provider (openai or groq). If not specified, "
-                            "uses whichever API key is available.")
+    parser.add_argument('--llm-type', '-l', type=str, choices=['openai', 'groq'], 
+                        help="Choose the LLM provider (openai or groq). If not specified, "
+                             "uses whichever API key is available.")
     
     return parser
 
@@ -87,13 +86,14 @@ def main():
     parser = setup_argument_parser()
     args = parser.parse_args()
     
-    # Get the message from either positional or named argument
-    message = args.message if args.message is not None else args.message
+    # Get the message and path from either positional or named argument
+    message = args.message
+    path = args.path
+    llm_type = args.llm_type
     
     try:
-        if args.llm_type:
+        if llm_type:
             # If LLM type is specified, use that
-            llm_type = args.llm_type
             api_key = get_api_key(llm_type)
         else:
             # Otherwise, auto-detect based on available API keys
@@ -113,7 +113,7 @@ def main():
 
     llm_interaction_manager.interact_with_llm(
         user_message=message,
-        path=args.path
+        path=path
     )
     
     print(f"\nDONE :) (Using {llm_type.upper()})")
