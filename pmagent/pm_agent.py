@@ -244,47 +244,39 @@ class FileManager:
             self.logger.error(f"Error reading folder contents from {folder_path}: {e}")
             return None
 
-    def _validate_and_create_directory(self, directory_path):
+    def _validate_and_create_directory(self, dir_path):
         """
-        Validate and create a directory if it doesn't exist.
-        
+        Validate and create directory if it doesn't exist.
+        If dir_path is a file, it will remove the file part and create only the directory.
+
         Args:
-            directory_path (str): The directory path to validate and create.
-            
+            dir_path (str): The directory path or file path to validate.
+
         Returns:
-            str: Normalized directory path.
-            
+            str: The validated directory path.
+        
         Raises:
-            ValueError: If directory_path is not a valid string.
-            PermissionError: If there are permission issues.
-            OSError: If there are other OS-level errors.
+            OSError: If there's an OS-related error in creating the directory.
         """
-        # Check if it's a string and not empty
-        if not isinstance(directory_path, str) or not directory_path.strip():
-            raise ValueError("Directory path must be a non-empty string")
-        
         # Remove any leading/trailing whitespace
-        directory_path = directory_path.strip()
+        dir_path = dir_path.strip()
         
-        try:
-            # Normalize the path
-            directory_path = os.path.normpath(directory_path)
-            
-            # Create directory if it doesn't exist
-            os.makedirs(directory_path, exist_ok=True)
-            self.logger.info(f"Created or verified directory: {directory_path}")
-            
-            return directory_path
-            
-        except PermissionError as e:
-            error_msg = f"Permission denied when creating directory {directory_path}"
-            self.logger.error(f"{error_msg}: {e}")
-            raise PermissionError(error_msg) from e
-        
-        except OSError as e:
-            error_msg = f"OS error occurred while creating directory {directory_path}"
-            self.logger.error(f"{error_msg}: {e}")
-            raise OSError(error_msg) from e
+        # Check if dir_path points to a file (i.e., if the base name contains a file extension)
+        if os.path.isfile(dir_path) or os.path.splitext(dir_path)[1]:
+            # Extract directory part from the file path
+            dir_path = os.path.dirname(dir_path)
+
+        if not os.path.exists(dir_path):
+            try:
+                os.makedirs(dir_path, exist_ok=True)  # Create the directory
+                self.logger.info(f"Directory {dir_path} created.")
+            except OSError as e:
+                error_msg = f"OS error occurred while creating directory {dir_path}"
+                self.logger.error(f"{error_msg}: {e}")
+                raise OSError(error_msg) from e
+        else:
+            self.logger.info(f"Directory {dir_path} already exists.")
+        return dir_path
 
     def write_to_file(self, file_path, content, default_directory=None):
         """
