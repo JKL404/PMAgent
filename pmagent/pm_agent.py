@@ -4,12 +4,11 @@
 # **********************************************************************************************************************
 
 import os
-import mistune  # add this library
+import mistune
 import re
 import logging
 import tempfile
 import subprocess
-import traceback
 from openai import OpenAI
 from groq import Groq
 from typing import Tuple, Optional, Dict, List
@@ -50,9 +49,16 @@ class CodeRefactorManager:
         self.config = config
         # Dictionary to map language to file extension and interpreter
         self.language_map = {
-            'python': {'file_extension': '.py', 'interpreter': 'python'},
-            'bash': {'file_extension': '.sh', 'interpreter': 'bash'}
-        }
+                'python': {
+                    'file_extension': '.py',
+                    'interpreter': 'python',
+                    'pip_install_cmd': ['pip', 'install']
+                },
+                'bash': {
+                    'file_extension': '.sh',
+                    'interpreter': 'bash'
+                }
+            }
         self.client, self.default_model = self._create_client_and_model(open_ai_key, grop_api_key)
 
     def _create_client_and_model(self, open_ai_key: Optional[str], grop_api_key: Optional[str]) -> Tuple:
@@ -80,6 +86,30 @@ class CodeRefactorManager:
                 self.logger.info(f"** LLM Type ** : {key.upper()}")
                 return client, model
 
+    def handle_pip_install(self, code_content):
+        """Handle pip install commands separately before main code execution"""
+        pip_lines = []
+        code_lines = []
+        
+        for line in code_content.split('\n'):
+            if line.strip().startswith('!pip install'):
+                # Extract package names from pip install command
+                packages = line.replace('!pip install', '').strip().split()
+                pip_lines.extend(packages)
+            else:
+                code_lines.append(line)
+                
+        # Install packages if any
+        if pip_lines:
+            try:
+                cmd = ['pip', 'install'] + pip_lines
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as e:
+                self.logger.error(f"Failed to install packages: {e.stderr}")
+                raise
+                
+        return '\n'.join(code_lines)
+
     def code_interpret(self, code):
         """
         Detect and execute multiple code blocks (Python, Bash, etc.) from the input code.
@@ -87,7 +117,6 @@ class CodeRefactorManager:
         """
         temp_file_name = ""
         try:
-
             # Find all code blocks with the language and the content
             code_blocks = re.findall(r"```(\w+)\n(.*?)\n```", code, re.DOTALL)
 
@@ -97,11 +126,15 @@ class CodeRefactorManager:
             for language, code_content in code_blocks:
                 language = language.lower()
 
-                if language in self.language_map:
-                    file_extension = self.language_map[language]['file_extension']
-                    interpreter = self.language_map[language]['interpreter']
-                else:
+                if language not in self.language_map:
                     raise ValueError(f"Unsupported language: {language}")
+
+                # Handle pip install commands for Python
+                if language == 'python':
+                    code_content = self.handle_pip_install(code_content)
+
+                file_extension = self.language_map[language]['file_extension']
+                interpreter = self.language_map[language]['interpreter']
 
                 # Create a temporary file for the code
                 with tempfile.NamedTemporaryFile(mode='w', suffix=file_extension, delete=False) as temp_file:
@@ -110,20 +143,24 @@ class CodeRefactorManager:
                     temp_file_name = temp_file.name
 
                 # Execute the code in a subprocess and capture output
-                result = subprocess.run([interpreter, temp_file_name], capture_output=True, text=True)
+                result = subprocess.run([interpreter, temp_file_name], 
+                                     capture_output=True, 
+                                     text=True)
 
                 # Output results
                 if result.returncode != 0:
-                    self.logger.info(f"Execution failed for {language} with error:\n{result.stderr}")
+                    self.logger.error(f"Execution failed for {language} with error:\n{result.stderr}")
+                    raise RuntimeError(result.stderr)
                 else:
                     self.logger.info(f"Execution succeeded for {language} with output:\n{result.stdout}")
+                    return result.stdout
 
         except Exception as e:
-            self.logger.info(f"Error occurred: {e}")
-            traceback.print_exc()
+            self.logger.error(f"Error occurred: {str(e)}")
+            raise
         finally:
-            # Optionally, delete the temporary file after execution
-            if os.path.exists(temp_file_name):
+            # Clean up temporary file
+            if temp_file_name and os.path.exists(temp_file_name):
                 os.remove(temp_file_name)
 
     def run_model(self, messages: List[dict]):
@@ -278,6 +315,7 @@ class FileManager:
             self.logger.info(f"Directory {dir_path} already exists.")
         return dir_path
 
+
     def write_to_file(self, file_path, content, default_directory=None):
         """
         Helper function to write content to a file.
@@ -399,7 +437,7 @@ class LLMInteractionManager:
                 file_content = self.file_manager.read_file_contents(path)
                 if file_content is not None:
                     file_type = FileManager.get_file_type(path)
-                    user_message = f"{user_message}\n\nThe current content of the file is:\n```{file_type}\n{file_content}\n```"
+                    user_message = f"{user_message}\n\nThe current content of the file is:\nFile: {path}\n```{file_type}\n{file_content}\n```"
                 else:
                     self.logger.error("Failed to read file content.")
                     return None
